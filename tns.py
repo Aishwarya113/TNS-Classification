@@ -26,7 +26,7 @@ from urllib.error import HTTPError
 import xlsxwriter
 
 global TOKEN, BASEURL
-GETTOKEN = '8e31426a-f04d-4a32-b470-54102e2d568d'      # Fritz API Key, input your TOKEN from Fritz
+GETTOKEN = ''      # Fritz API Key, input your TOKEN from Fritz
 BASEURL = 'https://fritz.science/'                     # Fritz base url
 
 API_KEY = "54916f1700966b3bd325fc1189763d86512bda1d"     # TNS API Key
