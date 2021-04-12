@@ -32,16 +32,16 @@ BASEURL = 'https://fritz.science/'                     # Fritz base url
 API_KEY = "54916f1700966b3bd325fc1189763d86512bda1d"     # TNS API Key
 
 # TNS URLs for real uploads
-TNS_BASE_URL = "https://www.wis-tns.org/api/"
+TNS_BASE_URL = "https://www.wis-tns.org/api/"    #Access TNS using https://www.wis-tns.org/
 upload_url = "https://www.wis-tns.org/api/file-upload"
 report_url = "https://www.wis-tns.org/api/bulk-report"
 reply_url = "https://www.wis-tns.org/api/bulk-report-reply"
 
 # SANDBOX URLs for TNS upload trials
-SAND_TNS_BASE_URL = "https://sandbox-tns.org/api/"
-SAND_upload_url = "https://sandbox-tns.org/api/"
-SAND_report_url = "https://sandbox-tns.org/api/bulk-report"
-SAND_reply_url = "https://sandbox-tns.org/api/bulk-report-reply"
+SAND_TNS_BASE_URL = "https://sandbox.wis-tns.org/api/"  #Access Sandbox using https://sandbox.wis-tns.org/
+SAND_upload_url = "https://sandbox.wis-tns.org/api/file-upload"
+SAND_report_url = "https://sandbox.wis-tns.org/api/bulk-report"
+SAND_reply_url = "https://sandbox.wis-tns.org/api/bulk-report-reply"
 
 
 def api(method, endpoint, data=None):
@@ -819,7 +819,7 @@ class TNSClassificationReport:
         return json.dumps(self.classificationDict())
 
 
-def upload_to_TNS(filename, base_url = upload_url, api_key = API_KEY, filetype='ascii'):
+def upload_to_TNS(filename, base_url = upload_url, api_key = API_KEY, filetype='ascii'):  #change "base_url = upload_url" to "base_url = SAND_upload_url" to use Sandbox
     """
     uploads a file to TNS and returns the response json
     """
@@ -845,7 +845,7 @@ def upload_to_TNS(filename, base_url = upload_url, api_key = API_KEY, filetype='
 
 
 
-def tns_classify(classificationReport, base_url=report_url, api_key=API_KEY):
+def tns_classify(classificationReport, base_url=report_url, api_key=API_KEY):   #change "base_url = report_url" to "base_url = SAND_report_url" to use Sandbox
     """
     submits classification report to TNS and returns the response json
     """
@@ -868,9 +868,8 @@ def tns_classify(classificationReport, base_url=report_url, api_key=API_KEY):
         return False
 
 def tns_feedback(report_id):
-    data = {'api_key': API_KEY, 'report_id': report_id}
-    response = requests.post(TNS_BASE_URL + 'bulk-report-reply',
-                             data=data).json()
+    data = {'api_key': API_KEY, 'report_id': report_id}  
+    response = requests.post(reply_url, data=data).json()       #change "reply_url" to "SAND_reply_url" to use Sandbox
     feedback_code = response['id_code']
     print(feedback_code, response['id_message'], "feedback finished")
     if feedback_code == 200:
