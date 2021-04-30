@@ -156,7 +156,7 @@ def get_IAUname(ztfname):
         Returns : ATname
     '''
 
-    url = BASEURL+'api/alerts/ztf/'+ztfname+'/aux'
+    url = BASEURL+'/api/alerts_aux/'+ztfname
     response = api('GET',url)
     return response["data"]["cross_matches"]["TNS"]
 
