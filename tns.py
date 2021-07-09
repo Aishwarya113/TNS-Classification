@@ -26,22 +26,24 @@ from urllib.error import HTTPError
 import xlsxwriter
 
 global TOKEN, BASEURL
-GETTOKEN = ''      # Fritz API Key, input your TOKEN from Fritz
+GETTOKEN = '8e31426a-f04d-4a32-b470-54102e2d568d'      # Fritz API Key, input your TOKEN from Fritz
 BASEURL = 'https://fritz.science/'                     # Fritz base url
 
 API_KEY = "54916f1700966b3bd325fc1189763d86512bda1d"     # TNS API Key
+YOUR_BOT_ID="48869"
+YOUR_BOT_NAME="ZTF_Bot1"
 
 # TNS URLs for real uploads
-TNS_BASE_URL = "https://www.wis-tns.org/api/"    #Access TNS using https://www.wis-tns.org/
+TNS_BASE_URL = "https://www.wis-tns.org/api/"
 upload_url = "https://www.wis-tns.org/api/file-upload"
 report_url = "https://www.wis-tns.org/api/bulk-report"
 reply_url = "https://www.wis-tns.org/api/bulk-report-reply"
 
 # SANDBOX URLs for TNS upload trials
-SAND_TNS_BASE_URL = "https://sandbox.wis-tns.org/api/"  #Access Sandbox using https://sandbox.wis-tns.org/
-SAND_upload_url = "https://sandbox.wis-tns.org/api/file-upload"
-SAND_report_url = "https://sandbox.wis-tns.org/api/bulk-report"
-SAND_reply_url = "https://sandbox.wis-tns.org/api/bulk-report-reply"
+SAND_TNS_BASE_URL = "https://sandbox-tns.org/api/"
+SAND_upload_url = "https://sandbox-tns.org/api/"
+SAND_report_url = "https://sandbox-tns.org/api/bulk-report"
+SAND_reply_url = "https://sandbox-tns.org/api/bulk-report-reply"
 
 
 def api(method, endpoint, data=None):
@@ -156,7 +158,7 @@ def get_IAUname(ztfname):
         Returns : ATname
     '''
 
-    url = BASEURL+'/api/alerts_aux/'+ztfname
+    url = BASEURL+'api/alerts_aux/'+ztfname
     response = api('GET',url)
     return response["data"]["cross_matches"]["TNS"]
 
@@ -175,36 +177,68 @@ def get_classification(ztfname):
 
     if (len(output)< 1):
         classification = "No Classification found"
+        probability = "None"
         classification_date = "None"
 
     if (len(output)==1):
 
         classification = response['data'][0]['classification']
+        probability = response['data'][0]['probability']
         classification_date = response['data'][0]['created_at'].split('T')[0]
+
+        if (probability <= 0.6):
+
+            print ("Low probability, do you want to proceed with the classification")
+
+            user_input = input("y/n: ")
+
+            if user_input == 'y':
+
+                classification = classification
+                probability =  probability
+                classification_date = classification_date
 
     if (len(output) > 1):
 
         classification = []
         classification_date = []
+        probability = []
 
         for i in range (len(output)):
 
             classify = response['data'][i]['classification']
             classify_date = response['data'][i]['created_at']
+            prob = response['data'][i]['probability']
 
             classification.append(classify)
+            probability=np.append(probability, prob)
             classification_date.append(classify_date)
 
         for i in range (len(classification)):
 
-            print ((i+1),")", "Classification: ", classification[i],  "\t Classification date:", classification_date[i].split('T')[0])
+            print ((i+1),")", "Classification: ", classification[i],  "\t Probability:", str(probability[i]), "\t Classification date:", classification_date[i].split('T')[0])
 
         user_input = input("Choose classification: ")
 
-        classification = classification[int(user_input)-1]
-        classification_date = classification_date[int(user_input)-1].split('T')[0]
+        if (probability[int(user_input)-1] <= 0.6):
 
-    return classification, classification_date
+            print ("Low probability, do you want to proceed with the classification")
+
+            user_choice = input("y/n: ")
+
+            if user_choice == 'y':
+
+                classification = classification[int(user_input)-1]
+                probability = probability[int(user_input)-1]
+                classification_date = classification_date[int(user_input)-1].split('T')[0]
+        else:
+
+            classification = classification[int(user_input)-1]
+            probability = probability[int(user_input)-1]
+            classification_date = classification_date[int(user_input)-1].split('T')[0]
+
+    return classification, probability, classification_date
+
 
 
 def get_redshift(ztfname):
@@ -244,7 +278,7 @@ def get_TNS_information(ztfname):
         clas = "Not classified yet"
 
     else:
-        clas = ('Classification: '+str(clas[0])+','+' Classification date: '+str(clas[1]))
+        clas = ('Classification: '+str(clas[0])+','+ ' Probability: '+str(clas[1])+','+' Classification date: '+str(clas[2]))
 
     redshift = get_redshift(ztfname)
 
@@ -696,7 +730,7 @@ def get_sources(group_id, date):
 
 def downloadfritzascii(outfile):
 
-    date = '2020-11-06' #Specify the date from which you want to check the saved sources
+    date = '2021-01-01' #Specify the date from which you want to check the saved sources
 
     path = 'https://fritz.science/api/sources?group_ids=41&saveSummary=true&savedAfter='+date+'T00:00:00.000001'
 
@@ -744,6 +778,13 @@ def get_TNS_classification_ID(classification):
         if (keys == classification):
             classkey = class_ids[keys]
             return classkey
+
+def get_TNS_classification_ID(classification):
+
+    class_ids = {'Afterglow':23, 'AGN':29, 'CV':27, 'Galaxy':30, 'Gap':60, 'Gap I':61, 'Gap II':62, 'ILRT':25, 'Kilonova':70, 'LBV':24,'M dwarf':210, 'Nova':26, 'Novae':26, 'QSO':31, 'SLSN-I':18, 'Ic-SLSN':18, 'SLSN-II':19, 'SLSN-R':20, 'SN':1, 'I':2, 'Type I':2, 'I-faint':15, 'I-rapid':16, 'Ia':3, 'Ia-norm':3, 'Ia-91bg':103,'Ia-91T':104, 'Ia-CSM':106, 'Ia-pec':100, 'Ia-SC':102, 'Ia-02cx':105,
+                'Ib':4, 'Ib-norm':4, 'Ib-Ca-rich':8, 'Ib-pec':107, 'Ib/c':6, 'SN Ibn':9, 'Ibn':9, 'Ic':5, 'Ic-norm':5, 'Ic-BL':7, 'Ic-pec':108, 'II':10, 'Type II':10, 'II-norm':10,
+                'II-pec':110, 'IIb':14, 'IIL':12, 'IIn':13, 'IIn-pec':112, 'IIP':11, 'SN impostor':99, 'Std-spec':50, 'TDE':120,
+                'Varstar':28, 'WR':200, 'WR-WC':202, 'WR-WN':201, 'WR-WO':203, 'Other':0}
 
 
 def get_TNS_instrument_ID(classification):
@@ -819,12 +860,15 @@ class TNSClassificationReport:
         return json.dumps(self.classificationDict())
 
 
-def upload_to_TNS(filename, base_url = upload_url, api_key = API_KEY, filetype='ascii'):  #change "base_url = upload_url" to "base_url = SAND_upload_url" to use Sandbox
+def upload_to_TNS(filename, base_url = upload_url, api_key = API_KEY, filetype='ascii'):
+
     """
     uploads a file to TNS and returns the response json
     """
     url = base_url
     data = {'api_key' : api_key}
+
+    headers={'User-Agent':'tns_marker{"tns_id":'+str(YOUR_BOT_ID)+', "type":"bot", "name":"'+YOUR_BOT_NAME+'"}'}
 
     if filetype is 'ascii':
         files = [('files[]', (filename, open(filename), 'text/plain'))]
@@ -834,7 +878,7 @@ def upload_to_TNS(filename, base_url = upload_url, api_key = API_KEY, filetype='
                                'application/fits'))]
 
     if filename:
-        response = requests.post(url, data=data, files=files)
+        response = requests.post(url, headers=headers, data=data, files=files)
         try:
             return response.json()
         except:
@@ -843,15 +887,16 @@ def upload_to_TNS(filename, base_url = upload_url, api_key = API_KEY, filetype='
     else:
         return {}
 
-
-
-def tns_classify(classificationReport, base_url=report_url, api_key=API_KEY):   #change "base_url = report_url" to "base_url = SAND_report_url" to use Sandbox
+def tns_classify(classificationReport, base_url= report_url, api_key=API_KEY):
     """
     submits classification report to TNS and returns the response json
     """
     url = base_url
+
+    headers={'User-Agent':'tns_marker{"tns_id":'+str(YOUR_BOT_ID)+', "type":"bot", "name":"'+YOUR_BOT_NAME+'"}'}
+
     data = {'api_key' : api_key, 'data' : classificationReport.classificationJson()}
-    response = requests.post(url, data=data).json()
+    response = requests.post(url, headers=headers, data=data).json()
     if not response:
         return False
 
@@ -867,9 +912,15 @@ def tns_classify(classificationReport, base_url=report_url, api_key=API_KEY):   
         print("re-submit classification, but don't re-upload files")
         return False
 
+
+
 def tns_feedback(report_id):
-    data = {'api_key': API_KEY, 'report_id': report_id}  
-    response = requests.post(reply_url, data=data).json()       #change "reply_url" to "SAND_reply_url" to use Sandbox
+    data = {'api_key': API_KEY, 'report_id': report_id}
+
+    headers={'User-Agent':'tns_marker{"tns_id":'+str(YOUR_BOT_ID)+', "type":"bot", "name":"'+YOUR_BOT_NAME+'"}'}
+
+    response = requests.post(reply_url, headers=headers, data=data).json()
+
     feedback_code = response['id_code']
     print(feedback_code, response['id_message'], "feedback finished")
     if feedback_code == 200:
@@ -891,7 +942,6 @@ def tns_feedback(report_id):
         return False
 
 
-
 downloadfritzascii('RCF_sources') #download the updated list of sources saved to RCF in descending order
 
 f = ascii.read("RCF_sources.ascii") #ascii file containing the names of sources and their saved dates
@@ -901,6 +951,8 @@ sources = f['col1']
 
 
 for source in sources:
+
+    print (source)
 
     flag = 0
     ztfname = source
@@ -919,18 +971,6 @@ for source in sources:
         if info[2] == 'Not classified yet':         #Check if classified
             flag =1
             continue
-
-
-        a,b = (info[2]).split(',', 1)               #This is just to get the classification date
-        c,d = b.split(':', 1)
-        e,class_date = d.split(' ', 1)
-
-
-        k,l = (info[2]).split(':', 1)               #This is just to get the classification
-        m,n = l.split(',', 1)
-        o,classify = m.split(' ', 1)
-
-        #print (classify, class_date)
 
         print (info)
         print ("Do you want to proceed with the report?")
@@ -1024,7 +1064,7 @@ for source in sources:
 
                 if inst == 'SPRAT':
 
-                    classifiers = 'D. A. Perley, K. Taggart (LJMU), A. Dahiwale, C. Fremling (Caltech) on behalf of the Zwicky Transient Facility (ZTF)'### Change accordingly
+                    classifiers = 'D. A. Perley(LJMU), A. Dahiwale, C. Fremling (Caltech) on behalf of the Zwicky Transient Facility (ZTF)'### Change accordingly
                     source_group = 48 ### Require source group id from drop down list, 0 is for None
                     spectypes = np.array(['object','host','sky','arcs','synthetic'])
 
