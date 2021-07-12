@@ -972,6 +972,19 @@ for source in sources:
             flag =1
             continue
 
+        
+        a,b = (info[2]).split('Classification date', 1)             #This is just to get the classification date
+        c,d = b.split(':', 1)
+        e,class_date = d.split(' ', 1)
+ 
+
+        k,l = (info[2]).split(':', 1)               #This is just to get the classification
+        m,n = l.split(',', 1)
+        o,p = m.split(' ', 1)
+        p,classify = m.split(' ', 1)
+
+        #print (classify, class_date)
+        
         print (info)
         print ("Do you want to proceed with the report?")
 
